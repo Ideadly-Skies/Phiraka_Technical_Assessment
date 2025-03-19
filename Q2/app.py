@@ -1,0 +1,164 @@
+# imports
+import os
+from flask import Flask, render_template, request, redirect, url_for, flash, session # type: ignore
+from DB import DB
+from datetime import datetime  # Import the datetime class
+from dotenv import load_dotenv                                                       # type: ignore
+
+"""
+===================================
+    Load .env + CRUD Functions
+===================================
+"""
+# load dotenv
+load_dotenv()
+
+# initialize db class
+db = DB()
+
+# login function
+def login(username, password):
+    return db.login(username, password)
+
+# add new user
+def add_user(username, password):
+    response = db.insert_user(username, password)
+    print("user %s successfully added: %s" %(username, response))
+
+# update user
+def update_user(user_id, new_username, new_password):
+    response = db.update_user(user_id, new_username, new_password)
+    print("User %d updated: %s" %(user_id, response))
+
+# delete user
+def delete_user(user_id):
+    response = db.delete_user(user_id)
+    print("User %d deleted: %s" %(user_id, response))
+
+# get users
+def get_users():
+    users = db.get_all_users()
+    print("printing all users...")
+    for user in users:
+        print(user)
+
+"""
+===================================
+      Routes + Flask App Flow
+===================================
+"""
+# init new flask instance
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY")
+
+@app.route('/')
+def index():
+    return render_template('login.html')  # Render the login form
+
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    captcha_input = request.form['captcha']
+
+    # Hardcoded captcha validation for simplicity (should be dynamic)
+    if captcha_input != "N F 1 0 1":  # Replace with actual dynamic captcha validation logic
+        flash("Captcha incorrect. Please try again.", 'error')
+        return redirect(url_for('index'))
+
+    if db.login(username, password):
+        return redirect(url_for('dashboard'))
+    else:
+        flash("Login Failed. Try again.", 'error')
+        return redirect(url_for('index'))
+    
+
+@app.route('/logout')
+def logout():
+    # Remove the user session (if applicable)
+    session.clear()  # Clears the entire session
+
+    # Redirect the user to the login page
+    return redirect(url_for('index'))
+
+@app.route('/dashboard')
+def dashboard():
+    # Fetch all users from the database
+    users = db.get_all_users()
+
+    # Convert CreateTime to datetime and format it
+    for user in users:
+        # Ensure 'CreateTime' is in datetime format
+        if isinstance(user['createtime'], str):
+            # Use the correct format for ISO 8601 with microseconds
+            user['createtime'] = datetime.strptime(user['createtime'], '%Y-%m-%dT%H:%M:%S.%f')
+        # Format the datetime object as 'YYYY-MM-DD'
+        user['createtime'] = user['createtime'].strftime('%Y-%m-%d')
+
+    # Flash a success message after login
+    flash("Login successful!", 'success')
+
+    # Render the dashboard template with users data
+    return render_template('dashboard.html', users=users)
+
+@app.route('/create_user', methods=['GET', 'POST'])
+def create_user():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Add the new user to the database
+        db.insert_user(username, password)
+        
+        flash("User created successfully!", 'success')
+        return redirect(url_for('dashboard'))
+
+    return render_template('create_user.html')
+
+@app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
+def edit_user(user_id):
+    user = db.get_user_by_id(user_id)[0]  # Fetch the user by ID
+    if request.method == 'POST':
+        # If it's a POST request, update the user data
+        new_username = request.form['username']
+        new_password = request.form['password']
+        db.update_user(user_id, new_username, new_password)
+        flash("User updated successfully!", 'success')
+        return redirect(url_for('dashboard'))
+    
+    # If GET request, render the form with the user's current data
+    return render_template('edit_user.html', user=user)
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    db.delete_user(user_id)  # Delete the user from the database
+    flash("User deleted successfully!", 'success')
+    return redirect(url_for('dashboard'))
+
+"""
+===============================
+    Invoke Flask App 
+===============================
+"""
+# checks if the current script is being run directly as the main program
+# or if it's being imported as a module into another program
+if __name__ == "__main__":
+    app.run(debug=True)
+
+    # migrate and create `tbl_user`
+    # db.create_table()
+
+    # login with existing user
+    # login("obie", "securepassword123")
+
+    # add new user
+    # add_user('new_user', 'password123')
+
+    # update user
+    # update_user(2, 'experienced_user', 'password1234')
+
+    # delete user
+    # delete_user(2)
+
+    # view all users
+    # get_users()

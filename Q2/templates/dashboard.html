@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <!-- Toastr CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet">
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Daftar User</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Password</th>
+                <th>Create Time</th>
+                <th>Fungsi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Example user data, dynamically populated -->
+            {% for user in users %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ user['username'] }}</td>
+                    <td>****</td>
+                    <td>{{ user['createtime'] }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_user', user_id=user['id']) }}">Edit</a> |
+                        <!-- Delete form -->
+                        <form action="{{ url_for('delete_user', user_id=user['id']) }}" method="POST" style="display:inline;">
+                            <button type="submit" style="border: none; background: none; color: blue; text-decoration: underline; cursor: pointer;">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+    <a href="{{ url_for('create_user') }}">Create User</a> |
+    <a href="{{ url_for('logout') }}">Logout</a>
+
+    <script>
+        // Function to display Toastr notifications
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'success' %}
+                    toastr.success("{{ message }}");  // Success notification (green tick)
+                {% elif category == 'error' %}
+                    toastr.error("{{ message }}");  // Error notification (red cross)
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </script>
+</body>
+</html>
