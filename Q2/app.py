@@ -4,6 +4,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from DB import DB
 from datetime import datetime  # Import the datetime class
 from dotenv import load_dotenv                                                       # type: ignore
+import random
+import string
 
 """
 ===================================
@@ -53,7 +55,20 @@ app.secret_key = os.getenv("SECRET_KEY")
 
 @app.route('/')
 def index():
-    return render_template('login.html')  # Render the login form
+    # render login form
+    return render_template('login.html')  
+
+# Generate captcha
+@app.route('/generate_captcha')
+def generate_captcha():
+    # Generate random captcha string (5 characters)
+    captcha_value = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+    # Store the captcha value in session
+    session['captcha'] = captcha_value
+
+    # Return captcha as text or image (depending on your implementation)
+    return captcha_value
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -61,22 +76,31 @@ def login():
     password = request.form['password']
     captcha_input = request.form['captcha']
 
-    # Hardcoded captcha validation for simplicity (should be dynamic)
-    if captcha_input != "N F 1 0 1":  # Replace with actual dynamic captcha validation logic
-        flash("Captcha incorrect. Please try again.", 'error')
+    # get the stored captcha from the session
+    stored_captcha = session.get('captcha')
+
+    # match captcha with user input
+    print("captcha input: %s" % (captcha_input))
+    print("stored captcha: %s" % (stored_captcha))
+    
+    if captcha_input != stored_captcha: 
+        flash("LOGIN GAGAL.i", 'error')
         return redirect(url_for('index'))
 
     if db.login(username, password):
+        flash("LOGIN SUKSES", 'success')
         return redirect(url_for('dashboard'))
     else:
-        flash("Login Failed. Try again.", 'error')
+        flash("LOGIN GAGAL.", 'error')
         return redirect(url_for('index'))
-    
 
 @app.route('/logout')
 def logout():
-    # Remove the user session (if applicable)
-    session.clear()  # Clears the entire session
+    # clear entire session
+    session.clear()
+
+    # flash successfully logout!
+    flash("LOGOUT SUKSES", 'success')
 
     # Redirect the user to the login page
     return redirect(url_for('index'))
@@ -95,9 +119,6 @@ def dashboard():
         # Format the datetime object as 'YYYY-MM-DD'
         user['createtime'] = user['createtime'].strftime('%Y-%m-%d')
 
-    # Flash a success message after login
-    flash("Login successful!", 'success')
-
     # Render the dashboard template with users data
     return render_template('dashboard.html', users=users)
 
@@ -110,7 +131,7 @@ def create_user():
         # Add the new user to the database
         db.insert_user(username, password)
         
-        flash("User created successfully!", 'success')
+        flash("BERHASIL MENAMBAHKAN USER BARU!", 'success')
         return redirect(url_for('dashboard'))
 
     return render_template('create_user.html')
@@ -123,7 +144,7 @@ def edit_user(user_id):
         new_username = request.form['username']
         new_password = request.form['password']
         db.update_user(user_id, new_username, new_password)
-        flash("User updated successfully!", 'success')
+        flash("UPDATE BERHASIL!", 'success')
         return redirect(url_for('dashboard'))
     
     # If GET request, render the form with the user's current data
@@ -131,8 +152,8 @@ def edit_user(user_id):
 
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
-    db.delete_user(user_id)  # Delete the user from the database
-    flash("User deleted successfully!", 'success')
+    db.delete_user(user_id) 
+    flash("DELETE BERHASIL!", 'success')
     return redirect(url_for('dashboard'))
 
 """
