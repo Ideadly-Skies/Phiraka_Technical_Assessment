@@ -3,8 +3,8 @@ from supabase import create_client, Client # type: ignore
 from dotenv import load_dotenv             # type: ignore
 import psycopg2                            # type: ignore
 
-# hashlib to encrypt the password
-import hashlib
+# bcrypt to encrypt the password
+import bcrypt                              # type: ignore 
 
 # load .env file when connecting to the DB 
 load_dotenv()
@@ -47,7 +47,7 @@ class DB:
             CREATE TABLE IF NOT EXISTS tbl_user (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(128) NOT NULL,
-                password VARCHAR(54) NOT NULL,
+                password VARCHAR(60) NOT NULL,
                 CreateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
@@ -66,19 +66,16 @@ class DB:
         except Exception as e:
             print("Error creating table: %s" %(e)) 
 
-    # login
+    # instance method to login into system 
     def login(self, username, password):
         """verify the username and password against the databases."""
-        # Hash the input password
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()[:54]
-
         # Fetch the user by username
         response = self.supabase.table("tbl_user").select("*").eq("username", username).execute()
         
         if response.data:
             user = response.data[0]
             # Compare the hashed password
-            if user["password"] == hashed_password:
+            if bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
                 print("Login successful!")
                 return True
             else:
@@ -92,11 +89,14 @@ class DB:
     def insert_user(self, username, password):
         """Insert a new user into the tbl_user table."""
         # Hash the password with SHA-256 and truncate it to 54 characters
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()[:54]
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        # Decode the hashed password to store it as a string in the database
+        decoded_password = hashed_password.decode('utf-8')
 
         response = self.supabase.table("tbl_user").insert({
             "username": username,
-            "password": hashed_password 
+            "password": decoded_password 
         }).execute()
         
         return response.data
@@ -116,10 +116,15 @@ class DB:
     # Update user
     def update_user(self, user_id, new_username, new_password):
         """Update username and password of an existing user."""
-        hashed_password = hashlib.sha256(new_password.encode()).hexdigest()[:54]  # Hash password
+        # Hash the new password
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+
+        # Decode the hashed password to store it as a string in the database
+        decoded_password = hashed_password.decode('utf-8')
+
         response = self.supabase.table("tbl_user").update({
             "username": new_username,
-            "password": hashed_password
+            "password": decoded_password 
         }).eq("id", user_id).execute()
         return response.data
     
