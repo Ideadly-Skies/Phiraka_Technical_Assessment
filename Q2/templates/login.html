@@ -104,6 +104,19 @@
             background-color: #218838;
         }
 
+        /* Back to Create User link */
+        a {
+            text-align: center;
+            display: block;
+            color: #007bff;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
         /* Flash messages for success/error */
         .flash-message {
             padding: 10px;
@@ -171,7 +184,8 @@
             
             <button type="submit">Submit</button>
         </form>
-
+        
+        <a href="{{ url_for('create_user') }}">Create User</a>
     </div> 
 </body>
 

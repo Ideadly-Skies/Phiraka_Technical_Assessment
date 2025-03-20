@@ -84,7 +84,7 @@ def login():
     print("stored captcha: %s" % (stored_captcha))
     
     if captcha_input != stored_captcha: 
-        flash("LOGIN GAGAL.i", 'error')
+        flash("LOGIN GAGAL.", 'error')
         return redirect(url_for('index'))
 
     if db.login(username, password):
@@ -164,22 +164,7 @@ def delete_user(user_id):
 # checks if the current script is being run directly as the main program
 # or if it's being imported as a module into another program
 if __name__ == "__main__":
-    app.run(debug=True)
-
     # migrate and create `tbl_user`
     # db.create_table()
-
-    # login with existing user
-    # login("obie", "securepassword123")
-
-    # add new user
-    # add_user('new_user', 'password123')
-
-    # update user
-    # update_user(2, 'experienced_user', 'password1234')
-
-    # delete user
-    # delete_user(2)
-
-    # view all users
-    # get_users()
+    
+    app.run(debug=True)
