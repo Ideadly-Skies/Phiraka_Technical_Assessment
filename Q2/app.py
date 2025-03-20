@@ -9,7 +9,7 @@ import string
 
 """
 ===================================
-    Load .env + CRUD Functions
+    Load .env + Invoke DB 
 ===================================
 """
 # load dotenv
@@ -17,32 +17,6 @@ load_dotenv()
 
 # initialize db class
 db = DB()
-
-# login function
-def login(username, password):
-    return db.login(username, password)
-
-# add new user
-def add_user(username, password):
-    response = db.insert_user(username, password)
-    print("user %s successfully added: %s" %(username, response))
-
-# update user
-def update_user(user_id, new_username, new_password):
-    response = db.update_user(user_id, new_username, new_password)
-    print("User %d updated: %s" %(user_id, response))
-
-# delete user
-def delete_user(user_id):
-    response = db.delete_user(user_id)
-    print("User %d deleted: %s" %(user_id, response))
-
-# get users
-def get_users():
-    users = db.get_all_users()
-    print("printing all users...")
-    for user in users:
-        print(user)
 
 """
 ===================================

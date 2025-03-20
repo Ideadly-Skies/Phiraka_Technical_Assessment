@@ -76,13 +76,10 @@ class DB:
             user = response.data[0]
             # Compare the hashed password
             if bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
-                print("Login successful!")
                 return True
             else:
-                print("Invalid password.")
                 return False
         else:
-            print("User not found.")
             return False
 
     # CRUD Operations for users
